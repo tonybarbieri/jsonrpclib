@@ -61,22 +61,7 @@ import jsonrpclib
 from jsonrpclib import config
 from jsonrpclib import history
 
-# JSON library importing
-cjson = None
-json = None
-try:
-    import cjson
-except ImportError:
-    try:
-        import json
-    except ImportError:
-        try:
-            import simplejson as json
-        except ImportError:
-            raise ImportError(
-                'You must have the cjson, json, or simplejson ' +
-                'module(s) available.'
-            )
+import omnijson as json
 
 IDCHARS = string.ascii_lowercase+string.digits
 
