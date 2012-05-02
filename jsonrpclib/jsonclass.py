@@ -73,6 +73,13 @@ def dump(obj, serialize_method=None, ignore_attribute=None, ignore=[]):
         params, attrs = serialize()
         return_obj['__jsonclass__'].append(params)
         return_obj.update(attrs)
+        
+        # EDIT: Need to run dump over the return_obj
+        # attributes so classes get properly serialized.
+        #
+        for key, value in return_obj.iteritems():
+            return_obj[key] = dump(value, serialize_method,
+                                    ignore_attribute, ignore)
         return return_obj
     # Otherwise, try to figure it out
     # Obviously, we can't assume to know anything about the
@@ -125,11 +132,12 @@ def load(obj):
         json_class_name = json_module_parts.pop()
         json_module_tree = '.'.join(json_module_parts)
         try:
-            temp_module = __import__(json_module_tree)
+            temp_module = import_helper(json_module_tree)
         except ImportError:
             raise TranslationError('Could not import %s from module %s.' %
                                    (json_class_name, json_module_tree))
         json_class = getattr(temp_module, json_class_name)
+
     # Creating the object...
     new_obj = None
     if type(params) is types.ListType:
@@ -141,5 +149,17 @@ def load(obj):
     for key, value in obj.iteritems():
         if key == '__jsonclass__':
             continue
-        setattr(new_obj, key, value)
+        
+        # EDIT: Need to set load(value) to make sure
+        # that value gets properly translated if it
+        # is a class.
+        #
+        setattr(new_obj, key, load(value))
     return new_obj
+
+def import_helper(name):
+    mod = __import__(name)
+    components = name.split('.')
+    for comp in components[1:]:
+        mod = getattr(mod, comp)
+    return mod
